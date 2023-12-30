@@ -24,7 +24,22 @@ const port = process.env.PORT || 3002;
 // 设置存储引擎和文件名
 const storageEngine = multer.memoryStorage();
 const upload = multer({ storage: storageEngine });
+app.get("/images", async (req, res) => {
+  try {
+    // Fetch images from Firebase Storage
+    const bucket = storage.bucket("gs://findbreakfast-b0b94.appspot.com");
+    const [files] = await bucket.getFiles();
 
+    const imageUrls = files.map((file) => {
+      return `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    });
+
+    res.json({ images: imageUrls });
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 app.get("/", (req, res) => {
   res.send(`
   <!DOCTYPE html>
