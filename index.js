@@ -24,22 +24,43 @@ const port = process.env.PORT || 3002;
 // 设置存储引擎和文件名
 const storageEngine = multer.memoryStorage();
 const upload = multer({ storage: storageEngine });
+// app.get("/images", async (req, res) => {
+//   try {
+//     // Fetch images from Firebase Storage
+//     const bucket = storage.bucket("findbreakfast-b0b94.appspot.com");
+//     const [files] = await bucket.getFiles();
+
+//     const imageUrls = files.map((file) => {
+//       // Use file.publicUrl() to generate a URL with the correct format
+//       return file.publicUrl();
+//     });
+
+//     res.json({ images: imageUrls });
+//   } catch (error) {
+//     console.error("Error fetching images:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
+
 app.get("/images", async (req, res) => {
   try {
-    // Fetch images from Firebase Storage
-    const bucket = storage.bucket("gs://findbreakfast-b0b94.appspot.com");
+    const bucket = storage.bucket("findbreakfast-b0b94.appspot.com");
     const [files] = await bucket.getFiles();
 
     const imageUrls = files.map((file) => {
-      return `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/findbreakfast-b0b94.appspot.com/o/${encodeURIComponent(
+        file.name
+      )}?alt=media`;
+      return imageUrl;
     });
-
+    // https://firebasestorage.googleapis.com/v0/b/findbreakfast-b0b94.appspot.com/o/1703911627979.jfif?alt=media&token=eb0562a2-ae6d-4caf-b5e1-ca1782da04d9
     res.json({ images: imageUrls });
   } catch (error) {
     console.error("Error fetching images:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 app.get("/", (req, res) => {
   res.send(`
   <!DOCTYPE html>
@@ -93,8 +114,9 @@ app.post("/upload", upload.single("image"), async (req, res) => {
       res.status(500).send("Internal Server Error");
     });
 
-    stream.on("finish", () => {
+    stream.on("finish", async () => {
       console.log("File uploaded to Firebase Storage.");
+      await file.makePublic();
       res.status(200).send("File uploaded successfully.");
     });
 
