@@ -2,7 +2,8 @@ const express = require("express");
 const admin = require("firebase-admin");
 const multer = require("multer");
 const path = require("path");
-const serviceAccount = require("../serviceAccountKey.json");
+const env = require("dotenv");
+const serviceAccount = require("./serviceAccountKey.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -13,13 +14,17 @@ const storage = admin.storage();
 const bucket = storage.bucket();
 
 const app = express();
-const port = 3001;
+
+// 加载环境变量
+env.config();
+
+// 读取端口时考虑默认值
+const port = process.env.PORT || 3002;
 
 // 设置存储引擎和文件名
 const storageEngine = multer.memoryStorage();
 const upload = multer({ storage: storageEngine });
 
-// 处理根路径请求，输出包含表单的 HTML
 app.get("/", (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -40,7 +45,6 @@ app.get("/", (req, res) => {
   `);
 });
 
-// 处理上传请求
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
@@ -74,11 +78,6 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-// app.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-// });
-
-app.listen(process.env.PORT, () => {
-  console.log(`listening on http://localhost:${process.env.PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
